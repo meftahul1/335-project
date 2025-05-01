@@ -219,52 +219,7 @@
 ;; Function to check cond expression:
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
-(define (check-cond-expr expr env)
-  (let ((clauses (cdr expr))
-        (status  'ok))   ;; assume success until proven otherwise
-    (cond
-      ;; no clauses at all?
-      ((null? clauses)
-       (begin
-         (display "check-syntax: cond requires at least one clause")
-         (newline)
-         (set! status 'error)))
-
-      (else
-       ;; examine each clause
-       (for-each
-        (lambda (clause)
-          (cond
-            ;; clause must be a list
-            ((not (pair? clause))
-             (begin
-               (display "check-syntax: bad clause in cond: ")
-               (write clause)
-               (newline)
-               (set! status 'error)))
-
-            ;; else‐clause: must be exactly two elements: (else expr)
-            ((eq? (car clause) 'else)
-             (if (not (= (length clause) 2))
-                 (begin
-                   (display "check-syntax: else clause must have exactly one expr")
-                   (newline)
-                   (set! status 'error))
-                 (check-syntax (cadr clause) env)))
-
-            ;; normal clause: must be exactly two elements: (test result)
-            (else
-             (if (not (= (length clause) 2))
-                 (begin
-                   (display "check-syntax: cond clause must have exactly two parts")
-                   (newline)
-                   (set! status 'error))
-                 (begin
-                   (check-syntax (car clause)    env)
-                   (check-syntax (cadr clause)   env))))))
-
-        clauses)))
-    status))
+;; Need to implement this!
 
 
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
@@ -304,23 +259,19 @@
     ((and (pair? expr) (eq? (car expr) 'if))
      (check-if-expr expr env))
 
-    ;; 4) Cond expressions
-    ((and (pair? expr) (eq? (car expr) 'cond))
-     (check-cond-expr expr env))
-
-    ;; 5) Application expressions (anything else that’s a non-empty list)
+    ;; 4) Application expressions (anything else that’s a non-empty list)
     ((pair? expr)
      (check-app-expr expr env))
 
-    ;; 6) Numeric constants
+    ;; 5) Numeric constants
     ((number? expr)
      (check-const-expr expr env))
 
-    ;; 7) Variable references
+    ;; 6) Variable expression
     ((symbol? expr)
      (check-var-expr expr env))
 
-    ;; 8) Anything else is a syntax error
+    ;; 7) Anything else is a syntax error
     (else
      (begin
        (display "check-syntax: unexpected form ")
@@ -388,22 +339,7 @@
 ;; ⇒ 'error
 
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-;; 8) Cond – well-formed
-;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-(define cond-correct '(cond ((> x y) x) (else y)))
-(check-syntax cond-correct dummy-env)
-;; ⇒ 'ok
-
-;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-;; 9) Cond – bad clause
-;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-(define cond-bad '(cond (123)))
-(check-syntax cond-bad dummy-env)
-;; prints: check-syntax: bad clause in cond: 123
-;; ⇒ 'error
-
-;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-;; 10) Application – well-formed
+;; 8) Application – well-formed
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 (define dummy-env2 '(f x))
 (define app-correct '(f x))
@@ -411,7 +347,7 @@
 ;; ⇒ 'ok
 
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-;; 11) Application – missing operand
+;; 9) Application – missing operand
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 (define app-bad '(f))
 (check-syntax app-bad dummy-env2)
@@ -419,7 +355,7 @@
 ;; ⇒ 'error
 
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
-;; 12) Nested expression
+;; 10) Nested expression
 ;;––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 (define nested '(lambda (x) (if (zero? x) (sub1 x) (add1 x))))
 (check-syntax nested '(x))
